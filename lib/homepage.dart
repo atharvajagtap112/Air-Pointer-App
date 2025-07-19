@@ -1,13 +1,15 @@
 import 'package:air_pointer/keyboard.dart';
 import 'package:air_pointer/mouse_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 
 class Homepage extends StatefulWidget {
   final String code;
-  const Homepage({super.key,required this.code});
+  final String? ip;
+  const Homepage({super.key,required this.code, required this.ip});
 
   @override
   State<Homepage> createState() => _HomepageState();
@@ -27,10 +29,13 @@ class _HomepageState extends State<Homepage> {
     _connectStomp();
   }
 
-  void _connectStomp() {
+  void _connectStomp() async{
+       
+      print('Connecting to WebSocket at ${widget.ip}');
     stompClient = StompClient(
+      
       config: StompConfig(
-        url: 'ws://192.168.0.100:8080/ws',
+        url:widget.ip!,
         onConnect: onConnectCallback,
         onDisconnect: onDisconnectCallback,
         onWebSocketError: (dynamic error) {

@@ -17,6 +17,8 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
     torchEnabled: false,
   );
   String? scannedCode;
+  String? extractedCode;
+  String? extractedIP;
   bool hasScanned = false;
   bool isProcessing = false; // Add this to prevent multiple scans
 
@@ -289,15 +291,23 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                       ),
                     ],
                   ),
-                  if (hasScanned && scannedCode != null) ...[
+                  if (hasScanned && extractedCode != null) ...[
                     SizedBox(height: 15),
                     Text(
-                      scannedCode!,
+                      extractedCode!,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 4,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "URL: $extractedIP",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -306,7 +316,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
             ),
 
             // Action buttons
-            if (hasScanned && scannedCode != null)
+            if (hasScanned && extractedCode != null)
               Container(
                 margin: EdgeInsets.only(left: 20, right: 20, bottom: 20),
                 child: Row(
@@ -336,7 +346,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                     SizedBox(width: 15),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _navigateToHomepage(scannedCode!),
+                        onPressed: () => _navigateToHomepage(extractedCode!, extractedIP!),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
@@ -378,33 +388,56 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
 
         // Add small delay to show processing state
         Future.delayed(Duration(milliseconds: 500), () {
-          // Check if it's a 4-digit code
-          if (RegExp(r'^\d{4}$').hasMatch(code)) {
+          // Parse the QR code data
+          final parsedData = _parseQRCode(code);
+          
+          if (parsedData != null) {
             setState(() {
               scannedCode = code;
+              extractedCode = parsedData['code'];
+              extractedIP = parsedData['ip'];
               hasScanned = true;
               isProcessing = false;
             });
             
             // Stop camera after successful scan
             controller.stop();
-            
-            // Show success feedback
-           
           } else {
             setState(() {
               isProcessing = false;
             });
             
             // Show error for invalid code
-            _showErrorDialog("Invalid QR code. Please scan a QR code containing a 4-digit number.");
+            _showErrorDialog("Invalid QR code format. Expected format: 4-digit code + ws://ip:8080/ws");
           }
         });
       }
     }
   }
 
-
+  // Parse QR code data in format: code + "ws://{ip}:8080/ws"
+  Map<String, String>? _parseQRCode(String qrData) {
+    try {
+      // Check if the string contains the websocket URL pattern
+      final wsPattern = RegExp(r'^(\d{4})(ws://[^:]+:8080/ws)$');
+      final match = wsPattern.firstMatch(qrData);
+      
+      if (match != null) {
+        final code = match.group(1)!; // First 4 digits
+        final wsUrl = match.group(2)!; // Full WebSocket URL
+        
+        return {
+          'code': code,
+          'ip': wsUrl, // Now contains full WebSocket URL
+        };
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error parsing QR code: $e');
+      return null;
+    }
+  }
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -439,20 +472,22 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
   void _resetScanner() {
     setState(() {
       scannedCode = null;
+      extractedCode = null;
+      extractedIP = null;
       hasScanned = false;
       isProcessing = false;
     });
     controller.start();
   }
 
-  void _navigateToHomepage(String code) {
+  void _navigateToHomepage(String code, String ip) {
     // Stop camera before navigation to prevent heating
     controller.stop();
     
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Homepage(code: code),
+        builder: (context) => Homepage(code: code, ip: ip),
       ),
     );
   }

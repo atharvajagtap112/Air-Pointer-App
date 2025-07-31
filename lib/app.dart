@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:air_pointer/connectionSelectionScreen.dart';
 import 'package:air_pointer/homepage.dart';
 import 'package:air_pointer/mouse_controller.dart';
 import 'package:air_pointer/qr_code_screen%20.dart';
@@ -26,7 +27,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
 return MaterialApp(
   debugShowCheckedModeBanner: false,
-  home: QRCodeScannerScreen(),
+  home: ConnectionSelectionScreen(),
 );
   }
 }

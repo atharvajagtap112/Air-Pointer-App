@@ -133,7 +133,7 @@ double? _latestScrollDy;
         backgroundColor: Color(0xFF0D1117),
         appBar: AppBar(
           title: Text(
-            "Air Pointer",
+            "Axilink",
             style: TextStyle(
               color: Colors.white,
               fontSize: 24,
